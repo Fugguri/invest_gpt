@@ -13,7 +13,8 @@ TOKEN_API = config["TOKEN_API"]
 OPENAI_KEY = config["openai_key"]
 channels = config["channels"]
 storage = MemoryStorage()
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 bot = Bot(TOKEN_API, parse_mode="HTML")
 dp = Dispatcher(bot, storage=storage, loop=loop)
 openai.api_key = OPENAI_KEY
