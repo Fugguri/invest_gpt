@@ -2,7 +2,7 @@ import json
 import openai
 import asyncio
 from aiogram import types, Bot
-from main import dp, bot, db, channels,js
+from main import dp, bot, db, channels, js
 from channel_joined import get_channel_member, is_member_in_channel
 users_message = {}
 
@@ -22,11 +22,13 @@ async def start(message: types.Message):
                 username=message.from_user.username
                 )
 
+
 @dp.message_handler(commands=['add_chat'])
 async def mailing(message: types.Message):
     result = message.get_args()
-    result = list(map(lambda x : x.strip().replace("\n",""), result.split(" ")))
-    group_id= str(result[0])
+    result = list(
+        map(lambda x: x.strip().replace("\n", ""), result.split(" ")))
+    group_id = str(result[0])
     group_name = result[1]
     await message.bot.get_chat_member(group_id, message.from_user.id)
     try:
@@ -34,21 +36,22 @@ async def mailing(message: types.Message):
     except:
         await message.answer("Ошибка, проверьте есть ли у бота права администратора")
         return
-    if js.set_new_channel_for_subscribe(group_id,group_name):
+    if js.set_new_channel_for_subscribe(group_id, group_name):
         await message.answer("Успешно")
     else:
-        await message.answer("Ошибка") 
+        await message.answer("Ошибка")
+
 
 @dp.message_handler(commands=['delete_chat'])
 async def mailing(message: types.Message):
     result = message.get_args().split(" ")
-    group_id= str(result[0]).strip()
+    group_id = str(result[0]).strip()
     if js.delete_channel_for_subscribe(group_id):
-            await message.answer("Успешно")
+        await message.answer("Успешно")
     else:
         await message.answer("Ошибка")
 
-        
+
 @dp.message_handler(commands=['mailing'])
 async def mailing(message: types.Message):
     result = message.get_args()
@@ -68,16 +71,14 @@ async def check(callback: types.CallbackQuery):
             text="Проверить подписку", callback_data="check"))
         if not is_member_in_channel(member):
             all_joined = False
-            channels_text +="\n"+value
+            channels_text += "\n"+value
 
-    
-    
     if not all_joined:
         await callback.message.answer(text=f"Нет подписки.\nЧтобы пользоваться сервисом - подпишитесь {channels_text}",
-                                        reply_markup=markup)
+                                      reply_markup=markup)
     else:
         await callback.message.answer("Поздравляем, теперь вы можете пользоваться ботом.\nЧтобы начать пользоваться напишите вопрос или любое сообщение.")
-    
+
 
 @dp.message_handler()
 async def communicate(message: types.Message):
@@ -90,7 +91,7 @@ async def communicate(message: types.Message):
         users_message[message.from_user.id].append(
             {"role": "user", "content": message.text})
         responce = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4-1106-preview",
             messages=users_message[message.from_user.id]
         )
         answer = responce['choices'][0]['message']['content']
@@ -102,7 +103,7 @@ async def communicate(message: types.Message):
         await asyncio.sleep(20)
         await wait.delete()
         await communicate(message)
-        
+
     except Exception as ex:
         print(ex)
         users_message[message.from_user.id] = []
