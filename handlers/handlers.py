@@ -1,10 +1,21 @@
 import json
-import openai
+from main import OpenAI, OPENAI_KEY, config
+import httpx
 import asyncio
 from aiogram import types, Bot
 from main import dp, bot, db, channels, js
 from channel_joined import get_channel_member, is_member_in_channel
 users_message = {}
+
+proxy = config["proxy"]
+openai = OpenAI(
+    api_key=OPENAI_KEY,
+
+    http_client=httpx.Client(
+        proxies=proxy,
+        transport=httpx.HTTPTransport(local_address="0.0.0.0"),
+    ),
+)
 
 
 @dp.message_handler(commands=['start'])
@@ -90,14 +101,14 @@ async def communicate(message: types.Message):
             users_message[message.from_user.id] = []
         users_message[message.from_user.id].append(
             {"role": "user", "content": message.text})
-        responce = openai.ChatCompletion.create(
-            model="gpt-4-1106-preview",
+        response = openai.chat.completions.create(
+            model="gpt-4",
             messages=users_message[message.from_user.id]
         )
-        answer = responce['choices'][0]['message']['content']
+        answer = response.choices[0].message.content
         users_message[message.from_user.id].append(
             {"role": "assistant", "content": answer})
-        await message.reply(responce['choices'][0]['message']['content'])
+        await message.reply(answer)
     except openai.error.RateLimitError as ex:
         print(ex)
         await asyncio.sleep(20)
