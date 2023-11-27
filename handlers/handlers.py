@@ -5,6 +5,7 @@ import asyncio
 from aiogram import types, Bot
 from main import dp, bot, db, channels, js
 from channel_joined import get_channel_member, is_member_in_channel
+from openai import RateLimitError, BadRequestError
 users_message = {}
 
 proxy = config["proxy"]
@@ -109,15 +110,20 @@ async def communicate(message: types.Message):
         users_message[message.from_user.id].append(
             {"role": "assistant", "content": answer})
         await message.reply(answer)
-    except openai.error.RateLimitError as ex:
+    except RateLimitError as ex:
         print(ex)
         await asyncio.sleep(20)
+        await wait.delete()
+        await communicate(message)
+    except BadRequestError as ex:
+        print(ex)
+        users_message[message.from_user.id] = []
         await wait.delete()
         await communicate(message)
 
     except Exception as ex:
         print(ex)
         users_message[message.from_user.id] = []
-        await message.reply("Не понимаю, сформулируйте подругому")
-    finally:
         await wait.delete()
+        await communicate(message=message)
+        # await message.reply("Не понимаю, сформулируйте подругому")
